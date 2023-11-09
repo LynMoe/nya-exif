@@ -1,9 +1,11 @@
 use clap::ValueEnum;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
-use simple_log::log::{warn, info};
+use simple_log::log::{warn, info, error};
 use undrift_gps::wgs_to_gcj;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use std::sync::mpsc::channel;
+use ctrlc;
 use crate::exif_writer::{exiftool::ExifWriterExifTool, ExifWriterBase, ExifWriterParam};
 use crate::location_reader::{life_path, LocationReaderBase, LocationReaderParam};
 use crate::util::file;
@@ -43,6 +45,11 @@ pub struct AppParams {
 }
 
 pub fn run(params: AppParams) {
+  let (tx, rx) = channel();
+    
+  ctrlc::set_handler(move || tx.send(()).expect("Could not send signal on channel."))
+    .expect("Error setting Ctrl-C handler");
+
   let exif_param = ExifWriterParam {
     binary_path: params.writer_bin_path.clone(),
   };
@@ -103,22 +110,28 @@ pub fn run(params: AppParams) {
       _ => {}
     }
 
-    pb.suspend(|| {
-      let filename = Path::new(filename).file_name().unwrap().to_str().unwrap();
-      info!("Updating location for {}", filename);
-    });
-
     if location.is_some() {
       let location = location.unwrap();
       exiftool.write_location(filename, location.lat, location.lon, location.alt);
+
+      pb.suspend(|| {
+        let filename = Path::new(filename).file_name().unwrap().to_str().unwrap();
+        info!("[{}] Location updated, lat: {}, lon: {}", filename, location.lat, location.lon);
+      });
     } else {
       pb.suspend(|| {
         let filename = Path::new(filename).file_name().unwrap().to_str().unwrap();
-        warn!("Missing location for file {}, timestamp {}", filename, time);
+        warn!("[{}] No matching location, timestamp {}", filename, time);
       });
     }
 
     pb.set_position(now_state);
+
+    if rx.try_recv().is_ok() {
+      error!("Stopped by user");
+      pb.finish_with_message("Stopped");
+      return;
+    }
   }
 
   pb.finish_with_message("Finished");
