@@ -2,6 +2,7 @@ use clap::ValueEnum;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
 use simple_log::log::{warn, info};
+use undrift_gps::wgs_to_gcj;
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use crate::exif_writer::{exiftool::ExifWriterExifTool, ExifWriterBase, ExifWriterParam};
 use crate::location_reader::{life_path, LocationReaderBase, LocationReaderParam};
@@ -19,6 +20,14 @@ pub enum LocationReaderType {
   LifePath,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
+pub enum LocationGpsCoordinateTarget {
+  /// Global coordinate system
+  WGS84,
+  /// China coordinate system
+  GCJ02,
+}
+
 #[derive(Debug)]
 pub struct AppParams {
   pub operate_dir: PathBuf,
@@ -28,6 +37,7 @@ pub struct AppParams {
   pub location_reader_type: LocationReaderType,
   pub location_file_path: Option<PathBuf>,
   pub location_max_interval: u32,
+  pub location_gps_coordinate_target: LocationGpsCoordinateTarget,
   pub overwrite_original: bool,
   pub time_offset: i32,
 }
@@ -77,7 +87,21 @@ pub fn run(params: AppParams) {
 
     let filename = file.as_str();
     let time = exiftool.read_timestamp(filename);
-    let location = location_reader.get_location(time as i32);
+    let mut location = location_reader.get_location(time as i32);
+
+    match params.location_gps_coordinate_target {
+      LocationGpsCoordinateTarget::GCJ02 => {
+        if location.is_some() {
+          let mut lo = location.unwrap();
+          let (lat, lon) = wgs_to_gcj(lo.lat, lo.lon);
+          lo.lat = lat;
+          lo.lon = lon;
+
+          location = Some(lo);
+        }
+      }
+      _ => {}
+    }
 
     pb.suspend(|| {
       let filename = Path::new(filename).file_name().unwrap().to_str().unwrap();

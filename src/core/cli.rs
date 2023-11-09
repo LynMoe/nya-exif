@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use simple_log::log::debug;
 use simple_log::LogConfigBuilder;
 
-use crate::core::app::{self, ExifWriterType, LocationReaderType};
+use crate::core::app::{self, ExifWriterType, LocationReaderType, LocationGpsCoordinateTarget};
 
 #[derive(Parser)]
 #[command(name = "nya-exif")]
@@ -51,7 +51,10 @@ struct Cli {
     /// 
     /// If the difference between the timestamp of the location data and the photo exceeds this value, the location data will not be written.
     #[arg(short = 'i', long, default_value_t = 600)]
-    location_max_interval: i32,
+    location_max_interval: u32,
+
+    #[arg(short = 'c', long, value_enum, default_value_t = LocationGpsCoordinateTarget::GCJ02)]
+    location_coordinate_target: LocationGpsCoordinateTarget,
 
     /// Overwrite original file
     #[arg(short, long, default_value_t = true)]
@@ -81,6 +84,7 @@ pub fn run() {
       location_reader_type: app::LocationReaderType::LifePath,
       location_file_path: None,
       location_max_interval: 1800,
+      location_gps_coordinate_target: app::LocationGpsCoordinateTarget::WGS84,
       overwrite_original: false,
       time_offset: 0,
     };
@@ -121,11 +125,17 @@ pub fn run() {
       param.location_file_path = Some(PathBuf::from(location_file_path));
     }
 
+    debug!("Value for location_max_interval: {}", cli.location_max_interval);
+    param.location_max_interval = cli.location_max_interval;
+
+    debug!("Value for location_gps_coordinate_target: {:?}", cli.location_coordinate_target);
+    param.location_gps_coordinate_target = cli.location_coordinate_target;
+
     debug!("Value for overwrite_original: {}", cli.overwrite_original);
     param.overwrite_original = cli.overwrite_original;
 
     debug!("Value for time_offset: {}", cli.time_offset);
-      param.time_offset = cli.time_offset;
+    param.time_offset = cli.time_offset;
 
     debug!("Value for app params: {:?}", param);
 

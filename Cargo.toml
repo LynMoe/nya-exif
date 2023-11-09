@@ -1,6 +1,6 @@
 [package]
 name = "nya-exif"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 authors = ["Lyn <i@lyn.moe>"]
 description = "A cross-platform tool for embedding GPS data into photographs"
@@ -15,4 +15,5 @@ dirs = "5.0.1"
 indicatif = "0.17.7"
 os_info = "3.7.0"
 simple-log = "1.6.0"
+undrift_gps = "0.3.1"
 which = "5.0.0"

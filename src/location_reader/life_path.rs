@@ -63,14 +63,21 @@ impl LocationReaderBase for LocationReaderLiftPath {
   fn get_location(&mut self, timestamp: i32) -> Option<LocationReaderResult> {
     let timestamp = timestamp - self.param.time_offset;
     let pos = self.find_closest_position(timestamp)?;
-    self.file.seek(SeekFrom::Start(pos)).unwrap();
 
+    self.file.seek(SeekFrom::Start(pos.0)).unwrap();
     let mut rdr = ReaderBuilder::new()
       .has_headers(false)
       .from_reader(&self.file);
-
     let record1 = rdr.records().next()?.unwrap();
+
+    self.file.seek(SeekFrom::Start(pos.1)).unwrap();
+    let mut rdr = ReaderBuilder::new()
+      .has_headers(false)
+      .from_reader(&self.file);
     let record2 = rdr.records().next()?.unwrap();
+
+    debug!("record1: {:?}", record1);
+    debug!("record2: {:?}", record2);
 
     let d1 = (record1[0].parse::<i32>().unwrap() - timestamp).abs();
     let d2 = (record2[0].parse::<i32>().unwrap() - timestamp).abs();
@@ -83,7 +90,9 @@ impl LocationReaderBase for LocationReaderLiftPath {
     let alt_mid = record1[10].parse::<f64>().unwrap() * p1 + record2[10].parse::<f64>().unwrap() * p2;
     let confidence_radius_min = record1[5].parse::<f32>().unwrap().min(record2[5].parse::<f32>().unwrap());
 
-    if time_mid - timestamp > self.param.max_interval as i32 {
+    debug!("time_mid: {}, max interval: {}", time_mid, self.param.max_interval);
+
+    if (time_mid - timestamp).abs() > self.param.max_interval as i32 {
       return None;
     }
 
@@ -98,7 +107,7 @@ impl LocationReaderBase for LocationReaderLiftPath {
 }
 
 impl LocationReaderLiftPath {
-  fn find_closest_position(&self, timestamp: i32) -> Option<u64> {
+  fn find_closest_position(&self, timestamp: i32) -> Option<(u64, u64)> {
     let mut left = 0;
     let mut right = self.index.len() - 1;
 
@@ -111,22 +120,18 @@ impl LocationReaderLiftPath {
       }
     }
 
-    let diff1 = (self.index[left].0 - timestamp).abs();
-    let diff2 = (timestamp - self.index[left - 1].0).abs();
-
-    if diff1 > diff2 {
-      left -= 1;
-    }
 
     let diff2 = (timestamp - self.index[left - 1].0).abs();
+
+    let mut result = (left, left - 1);
 
     if left + 1 < self.index.len() {
       let diff3 = self.index[left + 1].0 - timestamp;
       if diff3 > diff2 {
-        left -= 1;
+        result = (left, left + 1);
       }
     }
 
-    Some(self.index[left].1)
+    Some((self.index[result.0].1, self.index[result.1].1))
   }
 }

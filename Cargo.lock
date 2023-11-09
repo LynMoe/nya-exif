@@ -523,7 +523,7 @@ checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "nya-exif"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "chrono",
  "clap",
@@ -532,6 +532,7 @@ dependencies = [
  "indicatif",
  "os_info",
  "simple-log",
+ "undrift_gps",
  "which",
 ]
 
@@ -802,6 +803,12 @@ dependencies = [
  "redox_syscall 0.1.57",
  "winapi",
 ]
+
+[[package]]
+name = "undrift_gps"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "802ac703aef8466fb9c498da7ccd0a33aa7cf5ccc26741df00007ee112a158a8"
 
 [[package]]
 name = "unicode-ident"

@@ -2,9 +2,17 @@
 
 中文 | <a href="README_en.md">English</a>
 
+![GitHub release (with filter)](https://img.shields.io/github/v/release/LynMoe/nya-exif)
+
 ## 介绍
 
 `nya-exif` 是一个用于匹配照片 GPS 信息, 并写入文件 EXIF 信息的工具, 支持 JPEG 和 PNG 及各大相机厂商的主流RAW格式. 本工具基于 Rust 编写, 支持全平台使用
+
+## Features
+
+- [x] 支持 JPEG 和 PNG 及各大相机厂商的主流RAW格式
+- [x] 全平台支持
+- [x] 支持国策局 GCJ-02 和 WGS-84 坐标系 (解决国内坐标漂移问题)
 
 ## DEMO
 
@@ -13,10 +21,13 @@
 2023-11-08 15:57:30.830962000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4076.JPG
 2023-11-08 15:57:30.931190000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4062.JPG
 2023-11-08 15:57:30.967376000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4089.JPG
+2023-11-08 15:57:30.967376000 [WARN] <nya_exif::core::app:120>:Missing location for file _MGL9572.JPG, timestamp 1699257194
 ⠂ [00:00:04] [###########################>-----------------------------------------------]      93/233     (6.7s)
 ```
 
 ## 使用
+
+确保已安装 [ExifTool](https://exiftool.org/), 并添加至 PATH
 
 ```shell
 # macOS 下, 一生足迹启动 iCloud 云备份, 可直接运行
@@ -27,7 +38,13 @@ nya-exif -f /path/to/life-path/data /path/to/images
 
 # 若 ExifTool 安装路径不在 PATH 中, 手动指定可执行文件位置
 nya-exif -b /path/to/exiftool /path/to/images
+
+# 指定目标坐标系, 默认为中国 GCJ-02 坐标系, 如果照片拍摄地为海外需要指定为 WGS-84 坐标系
+nya-exif -c wgs84 /path/to/images
 ```
+
+> [!NOTE]  
+> 推荐在本地文件上运行程序, 若在网络盘上运行, 会影响程序速度
 
 ## ExifWriter/LocationReader 支持情况
 
@@ -37,7 +54,7 @@ nya-exif -b /path/to/exiftool /path/to/images
 
 | Location Reader | 描述 |
 | --- | --- |
-| [一生足迹](https://apps.apple.com/us/app/footprint-record-lifes-path/id1225520399) | 一生足迹是一款 iOS 端记录用户足迹的应用, 耗电量较低, 可常驻后台<br>**安装**: [App Store](https://apps.apple.com/us/app/footprint-record-lifes-path/id1225520399)下载安装即可, 需要开启 iCloud 同步<br>**使用**：对于 macOS 用户, 程序会自动查找一生足迹在 iCloud 中的备份位置; 对于其他平台用户, 需要手动指定目录(含`backUpData.csv`文件)的位置 |
+| [一生足迹](https://apps.apple.com/us/app/footprint-record-lifes-path/id1225520399) | 一生足迹是一款 iOS 端记录用户足迹的应用, 耗电量较低, 可常驻后台<br>**安装:** [App Store](https://apps.apple.com/us/app/footprint-record-lifes-path/id1225520399)下载安装即可, 需要开启 iCloud 同步<br>**使用:** 对于 macOS 用户, 程序会自动查找一生足迹在 iCloud 中的备份位置; 对于其他平台用户, 需要手动指定目录(含`backUpData.csv`文件)的位置<br>**注意:** 该备份文件的同步不是很及时, 如果拍摄时间较新需要在 App 中手动到处数据文件加载 |
 
 目前程序默认选项为 `ExifTool` + `一生足迹`, 在 macOS 平台安装 `ExifTool.pkg` 后可直接使用默认参数启动工具
 
@@ -93,6 +110,13 @@ Options:
           
           [default: 600]
 
+  -c, --location-coordinate-target <LOCATION_COORDINATE_TARGET>
+          [default: gcj02]
+
+          Possible values:
+          - wgs84: Global coordinate system
+          - gcj02: China coordinate system
+
   -o, --overwrite-original
           Overwrite original file
 
@@ -122,6 +146,9 @@ Options:
 若遇到 ExifTool 无法处理的文件, 请附上文件信息提交 Issue
 
 对于 ExifWriter 和 LocationReader, 请参考 `src/exif_writer` 和 `src/location_reader` 目录下已有的实现, 实现对应的 Trait 后在 `src/core/app.rs` 中注册即可
+
+> [!IMPORTANT]  
+> Location Reader返回的经纬度应该为地球坐标系(WGS84), 本工具会根据用户选择的坐标系进行转换
 
 ## License
 

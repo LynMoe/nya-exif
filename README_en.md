@@ -2,9 +2,17 @@
 
 <a href="README.md">中文</a> | English
 
+![GitHub release (with filter)](https://img.shields.io/github/v/release/LynMoe/nya-exif)
+
 ## Introduction
 
 `nya-exif` is a versatile tool designed to match and write photo GPS data into file EXIF information. It supports JPEG, PNG, and major camera manufacturers' mainstream RAW formats. Developed in Rust, this tool is compatible with all platforms.
+
+## Features
+
+- [x] Supports JPEG and PNG as well as mainstream RAW formats from major camera manufacturers
+- [x] Multi-platform support
+- [x] Supports GCJ-02 and WGS-84 coordinate systems (defaults to GCJ-02)
 
 ## DEMO
 
@@ -18,6 +26,8 @@
 
 ## Usage
 
+Ensure [ExifTool](https://exiftool.org/) is installed and added to PATH.
+
 ```shell
 # On macOS, you can directly run the "Lifetime Footprints" to start iCloud backup.
 nya-exif /path/to/images
@@ -27,7 +37,13 @@ nya-exif -f /path/to/life-path/data /path/to/images
 
 # If the ExifTool installation path is not in PATH, manually specify the executable file location.
 nya-exif -b /path/to/exiftool /path/to/images
+
+# Specify the target coordinate system, default is China's GCJ-02 coordinate system. Needs to be specified as WGS-84 coordinate system if the photo is taken overseas.
+nya-exif -c wgs84 /path/to/images
 ```
+
+> [!NOTE]
+> It is recommended to run the program on local files. If running on a network drive, the speed of the program will be affected.
 
 ## ExifWriter/LocationReader Table
 
@@ -93,6 +109,13 @@ Options:
           
           [default: 600]
 
+  -c, --location-coordinate-target <LOCATION_COORDINATE_TARGET>
+          [default: gcj02]
+
+          Possible values:
+          - wgs84: Global coordinate system
+          - gcj02: China coordinate system
+
   -o, --overwrite-original
           Overwrite original file
 
@@ -122,6 +145,9 @@ If there are other location recording software that need support, feel free to s
 If you encounter files that ExifTool cannot handle, please attach the file and submit an Issue.
 
 For ExifWriter and LocationReader, please refer to the existing implementations in the `src/exif_writer` and `src/location_reader` directories. After implementing the corresponding Trait, register it in `src/core/app.rs`.
+
+> [!IMPORTANT] 
+> The latitude and longitude returned by the Location Reader should be in the Earth coordinate system (WGS84), this tool will convert according to the coordinate system selected by the user.
 
 ## License
 
