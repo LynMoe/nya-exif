@@ -13,15 +13,15 @@
 - [x] 支持 JPEG 和 PNG 及各大相机厂商的主流RAW格式
 - [x] 全平台支持
 - [x] 支持国策局 GCJ-02 和 WGS-84 坐标系 (解决国内坐标漂移问题)
+- [x] 自动检测国内外位置, 自动转换为对应坐标系
 
 ## DEMO
 
 ```shell
 ➜  nya-exif /path/to/image/folder/
-2023-11-08 15:57:30.830962000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4076.JPG
-2023-11-08 15:57:30.931190000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4062.JPG
-2023-11-08 15:57:30.967376000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4089.JPG
-2023-11-08 15:57:30.967376000 [WARN] <nya_exif::core::app:120>:Missing location for file _MGL9572.JPG, timestamp 1699257194
+2023-11-11 12:46:08.337698000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4100.JPG] Location updated, lat: 34.7737885, lon: 131.9007701
+2023-11-11 12:46:08.394225000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4114.JPG] Location updated, lat: 34.67844170666667, lon: 131.83647663733333
+2023-11-11 12:46:08.434180000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4128.JPG] Location updated, lat: 34.68192337279844, lon: 131.8327970596869
 ⠂ [00:00:04] [###########################>-----------------------------------------------]      93/233     (6.7s)
 ```
 
@@ -31,7 +31,7 @@
 
 ```shell
 # macOS 下, 一生足迹启动 iCloud 云备份, 可直接运行
-nya-exif /path/to/images
+nya-exif .
 
 # 其他平台下, 需要将一生足迹数据目录拷贝至本地
 nya-exif -f /path/to/life-path/data /path/to/images
@@ -39,7 +39,7 @@ nya-exif -f /path/to/life-path/data /path/to/images
 # 若 ExifTool 安装路径不在 PATH 中, 手动指定可执行文件位置
 nya-exif -b /path/to/exiftool /path/to/images
 
-# 指定目标坐标系, 默认为中国 GCJ-02 坐标系, 如果照片拍摄地为海外需要指定为 WGS-84 坐标系
+# 指定目标坐标系, 默认为自动检测, 如果在边境线附近需要手动指定
 nya-exif -c wgs84 /path/to/images
 ```
 
@@ -111,7 +111,9 @@ Options:
           [default: 600]
 
   -c, --location-coordinate-target <LOCATION_COORDINATE_TARGET>
-          [default: gcj02]
+          Location GPS coordinate convert target
+          
+          Specifies the target coordinate system for converting GPS coordinates. Default is Auto-detect.
 
           Possible values:
           - wgs84: Global coordinate system
@@ -149,6 +151,10 @@ Options:
 
 > [!IMPORTANT]  
 > Location Reader返回的经纬度应该为地球坐标系(WGS84), 本工具会根据用户选择的坐标系进行转换
+
+## Declaimer
+
+本工具中附带的 `GCJ-02` 范围数据仅用于粗略地理位置判断, 不具有任何立场和政治倾向, 请勿用于其他用途 
 
 ## License
 

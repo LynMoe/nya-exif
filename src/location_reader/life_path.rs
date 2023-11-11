@@ -30,10 +30,10 @@ impl LocationReaderLiftPath {
     }
     file_path.push("backUpData.csv");
 
-    debug!("LifePath folder path: {:?}", file_path);
+    debug!("[LifePath] folder path: {:?}", file_path);
 
     if !file_path.exists() {
-      error!("LifePath csv file not exists, path {:?}", file_path);
+      error!("[LifePath] CSV file not exists, path {:?}", file_path);
       panic!();
     }
 
@@ -76,8 +76,8 @@ impl LocationReaderBase for LocationReaderLiftPath {
       .from_reader(&self.file);
     let record2 = rdr.records().next()?.unwrap();
 
-    debug!("record1: {:?}", record1);
-    debug!("record2: {:?}", record2);
+    debug!("[LifePath] search record1: {:?}", record1);
+    debug!("[LifePath] search record2: {:?}", record2);
 
     let d1 = (record1[0].parse::<i32>().unwrap() - timestamp).abs();
     let d2 = (record2[0].parse::<i32>().unwrap() - timestamp).abs();
@@ -90,7 +90,7 @@ impl LocationReaderBase for LocationReaderLiftPath {
     let alt_mid = record1[10].parse::<f64>().unwrap() * p1 + record2[10].parse::<f64>().unwrap() * p2;
     let confidence_radius_min = record1[5].parse::<f32>().unwrap().min(record2[5].parse::<f32>().unwrap());
 
-    debug!("time_mid: {}, max interval: {}", time_mid, self.param.max_interval);
+    debug!("[LifePath] time_mid: {}, max interval: {}", time_mid, self.param.max_interval);
 
     if (time_mid - timestamp).abs() > self.param.max_interval as i32 {
       return None;

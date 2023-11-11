@@ -7,7 +7,7 @@ pub struct LocationReaderParam {
   pub max_interval: u32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct LocationReaderResult {
   pub lat: f64,
   pub lon: f64,

@@ -1,14 +1,12 @@
-use clap::ValueEnum;
-use std::fmt::Write;
-use std::path::{Path, PathBuf};
-use simple_log::log::{warn, info, error};
-use undrift_gps::wgs_to_gcj;
-use indicatif::{ProgressBar, ProgressState, ProgressStyle};
-use std::sync::mpsc::channel;
-use ctrlc;
 use crate::exif_writer::{exiftool::ExifWriterExifTool, ExifWriterBase, ExifWriterParam};
 use crate::location_reader::{life_path, LocationReaderBase, LocationReaderParam};
-use crate::util::file;
+use crate::util::{file, location as lc};
+use clap::ValueEnum;
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use simple_log::log::{info, warn};
+use std::fmt::Write;
+use std::path::{Path, PathBuf};
+use undrift_gps::wgs_to_gcj;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Debug)]
 pub enum ExifWriterType {
@@ -32,24 +30,19 @@ pub enum LocationGpsCoordinateTarget {
 
 #[derive(Debug)]
 pub struct AppParams {
-  pub operate_dir: PathBuf,
+  pub operate_dir: Vec<PathBuf>,
   pub recursive: bool,
   pub writer_type: ExifWriterType,
   pub writer_bin_path: Option<PathBuf>,
   pub location_reader_type: LocationReaderType,
   pub location_file_path: Option<PathBuf>,
   pub location_max_interval: u32,
-  pub location_gps_coordinate_target: LocationGpsCoordinateTarget,
+  pub location_gps_coordinate_target: Option<LocationGpsCoordinateTarget>,
   pub overwrite_original: bool,
   pub time_offset: i32,
 }
 
 pub fn run(params: AppParams) {
-  let (tx, rx) = channel();
-    
-  ctrlc::set_handler(move || tx.send(()).expect("Could not send signal on channel."))
-    .expect("Error setting Ctrl-C handler");
-
   let exif_param = ExifWriterParam {
     binary_path: params.writer_bin_path.clone(),
   };
@@ -74,7 +67,11 @@ pub fn run(params: AppParams) {
     }
   }
 
-  let fi = file::read_dir_files(params.operate_dir.as_ref(), true, true).unwrap();
+  let mut fi = vec![];
+  for dir in params.operate_dir {
+    let fi_ = file::read_dir_files(dir.as_ref(), true, true).unwrap();
+    fi.extend(fi_);
+  }
 
   let pb = ProgressBar::new(fi.len() as u64);
   pb.set_style(
@@ -96,9 +93,24 @@ pub fn run(params: AppParams) {
     let time = exiftool.read_timestamp(filename);
     let mut location = location_reader.get_location(time as i32);
 
-    match params.location_gps_coordinate_target {
-      LocationGpsCoordinateTarget::GCJ02 => {
-        if location.is_some() {
+    if location.is_some() {
+      if params.location_gps_coordinate_target.is_some() {
+        match params.location_gps_coordinate_target.unwrap() {
+          LocationGpsCoordinateTarget::GCJ02 => {
+            let mut lo = location.unwrap();
+            let (lat, lon) = wgs_to_gcj(lo.lat, lo.lon);
+            lo.lat = lat;
+            lo.lon = lon;
+
+            location = Some(lo);
+          }
+          _ => {}
+        }
+      } else {
+        let llo = location.clone().unwrap();
+        let result = lc::is_point_in_gcj_region((llo.lat, llo.lon));
+
+        if result {
           let mut lo = location.unwrap();
           let (lat, lon) = wgs_to_gcj(lo.lat, lo.lon);
           lo.lat = lat;
@@ -107,7 +119,6 @@ pub fn run(params: AppParams) {
           location = Some(lo);
         }
       }
-      _ => {}
     }
 
     if location.is_some() {
@@ -116,7 +127,10 @@ pub fn run(params: AppParams) {
 
       pb.suspend(|| {
         let filename = Path::new(filename).file_name().unwrap().to_str().unwrap();
-        info!("[{}] Location updated, lat: {}, lon: {}", filename, location.lat, location.lon);
+        info!(
+          "[{}] Location updated, lat: {}, lon: {}",
+          filename, location.lat, location.lon
+        );
       });
     } else {
       pb.suspend(|| {
@@ -126,12 +140,6 @@ pub fn run(params: AppParams) {
     }
 
     pb.set_position(now_state);
-
-    if rx.try_recv().is_ok() {
-      error!("Stopped by user");
-      pb.finish_with_message("Stopped");
-      return;
-    }
   }
 
   pb.finish_with_message("Finished");

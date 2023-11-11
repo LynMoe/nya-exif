@@ -18,9 +18,9 @@
 
 ```shell
 ➜  nya-exif /path/to/image/folder/
-2023-11-08 15:57:30.830962000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4076.JPG
-2023-11-08 15:57:30.931190000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4062.JPG
-2023-11-08 15:57:30.967376000 [INFO] <nya_exif::core::app:84>:Updating location for 20230908-_MGL4089.JPG
+2023-11-11 12:46:08.337698000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4100.JPG] Location updated, lat: 34.7737885, lon: 131.9007701
+2023-11-11 12:46:08.394225000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4114.JPG] Location updated, lat: 34.67844170666667, lon: 131.83647663733333
+2023-11-11 12:46:08.434180000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4128.JPG] Location updated, lat: 34.68192337279844, lon: 131.8327970596869
 ⠂ [00:00:04] [###########################>-----------------------------------------------]      93/233     (6.7s)
 ```
 
@@ -110,7 +110,9 @@ Options:
           [default: 600]
 
   -c, --location-coordinate-target <LOCATION_COORDINATE_TARGET>
-          [default: gcj02]
+          Location GPS coordinate convert target
+          
+          Specifies the target coordinate system for converting GPS coordinates. Default is Auto-detect.
 
           Possible values:
           - wgs84: Global coordinate system

@@ -7,7 +7,7 @@ use simple_log::log::debug;
 pub fn read_dir_files(dir: &Path, full_path: bool, recursive: bool) -> io::Result<Vec<String>> {
   let exts = vec!["jpg", "jpeg", "png", "cr3", "dng", "heic", "RW2", "raw", "raf", "arw", "arq", "nef", "nrw"];
 
-  debug!("Reading dir: {:?}", dir);
+  debug!("[Util readDir] Reading dir: {:?}", dir);
 
   let mut files = Vec::new();
 
@@ -24,7 +24,7 @@ pub fn read_dir_files(dir: &Path, full_path: bool, recursive: bool) -> io::Resul
         }
         let ext = path.extension().unwrap_or("".to_owned().as_ref()).to_string_lossy().to_lowercase();
         if !exts.contains(&ext.as_ref()) {
-          debug!("Skipping file: {:?}", path);
+          debug!("[Util readDir] Skipping file: {:?}", path);
           continue;
         }
 

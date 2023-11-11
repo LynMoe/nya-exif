@@ -1,7 +1,6 @@
 use clap::Parser;
-use std::env;
 use std::path::PathBuf;
-use simple_log::log::debug;
+use simple_log::log::{debug, error};
 use simple_log::LogConfigBuilder;
 
 use crate::core::app::{self, ExifWriterType, LocationReaderType, LocationGpsCoordinateTarget};
@@ -12,7 +11,7 @@ use crate::core::app::{self, ExifWriterType, LocationReaderType, LocationGpsCoor
 #[command(version)]
 struct Cli {
     /// Path to photography files
-    path: Option<String>,
+    path: Vec<String>,
 
     /// Turn on recursive mode
     #[arg(short, long, default_value_t = true)]
@@ -53,8 +52,11 @@ struct Cli {
     #[arg(short = 'i', long, default_value_t = 600)]
     location_max_interval: u32,
 
-    #[arg(short = 'c', long, value_enum, default_value_t = LocationGpsCoordinateTarget::GCJ02)]
-    location_coordinate_target: LocationGpsCoordinateTarget,
+    /// Location GPS coordinate convert target
+    /// 
+    /// Specifies the target coordinate system for converting GPS coordinates. Default is Auto-detect.
+    #[arg(short = 'c', long, value_enum)]
+    location_coordinate_target: Option<LocationGpsCoordinateTarget>,
 
     /// Overwrite original file
     #[arg(short, long, default_value_t = true)]
@@ -77,14 +79,14 @@ pub fn run() {
     let cli = Cli::parse();
 
     let mut param = app::AppParams {
-      operate_dir: env::current_dir().unwrap(),
+      operate_dir: Vec::new(),
       recursive: true,
       writer_type: app::ExifWriterType::Exiftool,
       writer_bin_path: None,
       location_reader_type: app::LocationReaderType::LifePath,
       location_file_path: None,
       location_max_interval: 1800,
-      location_gps_coordinate_target: app::LocationGpsCoordinateTarget::WGS84,
+      location_gps_coordinate_target: None,
       overwrite_original: false,
       time_offset: 0,
     };
@@ -101,43 +103,48 @@ pub fn run() {
       simple_log::new(config).expect("Failed to init log");
     }
 
-    if let Some(pwd) = cli.path {
-      debug!("Value for path: {}", pwd);
-      param.operate_dir = PathBuf::from(pwd);
+    if cli.path.len() > 0 {
+      debug!("[Arg] Value for path: {:?}", cli.path);
+      param.operate_dir = cli.path.iter().map(|x| PathBuf::from(x)).collect();
+    } else {
+      error!("No path specified");
+      std::process::exit(1);
     }
 
-    debug!("Value for recursive: {}", cli.recursive);
+    debug!("[Arg] Value for recursive: {}", cli.recursive);
     param.recursive = cli.recursive;
 
-    debug!("Value for writer_type: {:?}", cli.writer_type);
+    debug!("[Arg] Value for writer_type: {:?}", cli.writer_type);
     param.writer_type = cli.writer_type;
 
     if let Some(writer_bin_path) = cli.writer_bin_path {
-      debug!("Value for writer_bin_path: {}", writer_bin_path);
+      debug!("[Arg] Value for writer_bin_path: {}", writer_bin_path);
       param.writer_bin_path = Some(PathBuf::from(writer_bin_path));
     }
 
-    debug!("Value for location_reader_type: {:?}", cli.location_reader_type);
+    debug!("[Arg] Value for location_reader_type: {:?}", cli.location_reader_type);
     param.location_reader_type = cli.location_reader_type;
 
     if let Some(location_file_path) = cli.location_file_path {
-      debug!("Value for location_file_path: {}", location_file_path);
+      debug!("[Arg] Value for location_file_path: {}", location_file_path);
       param.location_file_path = Some(PathBuf::from(location_file_path));
     }
 
-    debug!("Value for location_max_interval: {}", cli.location_max_interval);
+    debug!("[Arg] Value for location_max_interval: {}", cli.location_max_interval);
     param.location_max_interval = cli.location_max_interval;
 
-    debug!("Value for location_gps_coordinate_target: {:?}", cli.location_coordinate_target);
-    param.location_gps_coordinate_target = cli.location_coordinate_target;
+    if let Some(location_coordinate_target) = cli.location_coordinate_target {
+      debug!("[Arg] Value for location_gps_coordinate_target: {:?}", location_coordinate_target);
+      param.location_gps_coordinate_target = Some(location_coordinate_target);
+    }
 
-    debug!("Value for overwrite_original: {}", cli.overwrite_original);
+    debug!("[Arg] Value for overwrite_original: {}", cli.overwrite_original);
     param.overwrite_original = cli.overwrite_original;
 
-    debug!("Value for time_offset: {}", cli.time_offset);
+    debug!("[Arg] Value for time_offset: {}", cli.time_offset);
     param.time_offset = cli.time_offset;
 
-    debug!("Value for app params: {:?}", param);
+    debug!("[Arg] Value for app params: {:?}", param);
 
     app::run(param);
 }

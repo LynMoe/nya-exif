@@ -64,7 +64,7 @@ impl ExifWriterExifTool {
         result.push_str(&line);
     }
 
-    debug!("Exiftool arg: {:?}, result: {}", args, result);
+    debug!("[Exiftool] arg: {:?}, result: {}", args, result);
 
     result
   }
@@ -95,7 +95,7 @@ impl ExifWriterBase for ExifWriterExifTool {
     let dt = DateTime::parse_from_str(&time_string, "%Y:%m:%d %H:%M:%S %z")
         .expect("Failed to parse date time string");
 
-    debug!("Exiftool read timestamp: {}, time_string: {}", dt.timestamp(), time_string);
+    debug!("[Exiftool] time_string: {}, parse timestamp: {}", time_string, dt.timestamp());
 
     dt.timestamp()
   }
