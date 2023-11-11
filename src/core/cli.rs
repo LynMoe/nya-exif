@@ -17,6 +17,12 @@ struct Cli {
     #[arg(short, long, default_value_t = true)]
     recursive: bool,
 
+    /// Threads
+    /// 
+    /// Number of threads to use.
+    #[arg(short = 'x', long, default_value_t = 3)]
+    threads: u32,
+
     /// Exif writer type
     #[arg(short = 'w', long, value_enum, default_value_t = ExifWriterType::Exiftool)]
     writer_type: ExifWriterType,
@@ -81,6 +87,7 @@ pub fn run() {
     let mut param = app::AppParams {
       operate_dir: Vec::new(),
       recursive: true,
+      thread_count: 3,
       writer_type: app::ExifWriterType::Exiftool,
       writer_bin_path: None,
       location_reader_type: app::LocationReaderType::LifePath,
@@ -91,17 +98,12 @@ pub fn run() {
       time_offset: 0,
     };
 
-    if cli.debug {
-      let config = LogConfigBuilder::builder()
-        .level("debug")
-        .build();
-      simple_log::new(config).expect("Failed to init log");
-    } else {
-      let config = LogConfigBuilder::builder()
-        .level("info")
-        .build();
-      simple_log::new(config).expect("Failed to init log");
-    }
+    let config = LogConfigBuilder::builder()
+      .level(if cli.debug { "debug" } else { "info" })
+      .path("./nya-exif.log")
+      .time_format("%y-%m-%d %H:%M:%S")
+      .build();
+    simple_log::new(config).expect("Failed to init log");
 
     if cli.path.len() > 0 {
       debug!("[Arg] Value for path: {:?}", cli.path);
@@ -113,6 +115,9 @@ pub fn run() {
 
     debug!("[Arg] Value for recursive: {}", cli.recursive);
     param.recursive = cli.recursive;
+
+    debug!("[Arg] Value for threads: {}", cli.threads);
+    param.thread_count = cli.threads;
 
     debug!("[Arg] Value for writer_type: {:?}", cli.writer_type);
     param.writer_type = cli.writer_type;

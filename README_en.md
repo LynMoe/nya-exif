@@ -13,6 +13,8 @@
 - [x] Supports JPEG and PNG as well as mainstream RAW formats from major camera manufacturers
 - [x] Multi-platform support
 - [x] Supports GCJ-02 and WGS-84 coordinate systems (defaults to GCJ-02)
+- [x] Automatically detects location data and converts it to the corresponding coordinate system
+- [x] Multi-threaded processing
 
 ## DEMO
 
@@ -21,7 +23,9 @@
 2023-11-11 12:46:08.337698000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4100.JPG] Location updated, lat: 34.7737885, lon: 131.9007701
 2023-11-11 12:46:08.394225000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4114.JPG] Location updated, lat: 34.67844170666667, lon: 131.83647663733333
 2023-11-11 12:46:08.434180000 [INFO] <nya_exif::core::app:130>:[20230908-_MGL4128.JPG] Location updated, lat: 34.68192337279844, lon: 131.8327970596869
-⠂ [00:00:04] [###########################>-----------------------------------------------]      93/233     (6.7s)
+⠉ [00:00:03] [###########################>-----------------------------------------------]      54/77      (1.8s)
+⠉ [00:00:03] [###########################>-----------------------------------------------]      55/77      (1.6s)
+⠉ [00:00:03] [#############################>---------------------------------------------]      60/79      (1.4s)
 ```
 
 ## Usage
@@ -38,7 +42,7 @@ nya-exif -f /path/to/life-path/data /path/to/images
 # If the ExifTool installation path is not in PATH, manually specify the executable file location.
 nya-exif -b /path/to/exiftool /path/to/images
 
-# Specify the target coordinate system, default is China's GCJ-02 coordinate system. Needs to be specified as WGS-84 coordinate system if the photo is taken overseas.
+# Specify the target coordinate system, default is China's GCJ-02 coordinate system.
 nya-exif -c wgs84 /path/to/images
 ```
 
@@ -69,6 +73,13 @@ Arguments:
 Options:
   -r, --recursive
           Turn on recursive mode
+
+  -x, --threads <THREADS>
+          Threads
+          
+          Number of threads to use.
+          
+          [default: 3]
 
   -w, --writer-type <WRITER_TYPE>
           Exif writer type
