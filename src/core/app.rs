@@ -160,6 +160,8 @@ pub fn run(params: AppParams) {
 
         pb.set_position(now_state);
       }
+
+      exiftool.close().expect("Failed to close exif writer");
     }));
   }
 
