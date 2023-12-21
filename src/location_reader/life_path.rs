@@ -62,7 +62,11 @@ impl LocationReaderLiftPath {
 impl LocationReaderBase for LocationReaderLiftPath {
   fn get_location(&mut self, timestamp: i32) -> Option<LocationReaderResult> {
     let timestamp = timestamp - self.param.time_offset;
-    let pos = self.find_closest_position(timestamp)?;
+    let pos = self.find_closest_position(timestamp);
+    if pos.is_none() {
+      return None;
+    }
+    let pos = pos.unwrap();
 
     self.file.seek(SeekFrom::Start(pos.0)).unwrap();
     let mut rdr = ReaderBuilder::new()
@@ -108,6 +112,10 @@ impl LocationReaderBase for LocationReaderLiftPath {
 
 impl LocationReaderLiftPath {
   fn find_closest_position(&self, timestamp: i32) -> Option<(u64, u64)> {
+    if self.index.len() <= 2 {
+      return None;
+    }
+
     let mut left = 0;
     let mut right = self.index.len() - 1;
 
@@ -120,9 +128,11 @@ impl LocationReaderLiftPath {
       }
     }
 
+    if left == 0 {
+      return Some((self.index[0].1, self.index[1].1));
+    }
 
     let diff2 = (timestamp - self.index[left - 1].0).abs();
-
     let mut result = (left, left - 1);
 
     if left + 1 < self.index.len() {
